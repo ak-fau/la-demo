@@ -1,0 +1,7 @@
+interface usb_blaster
+usb_blaster_lowlevel_driver ftdi
+usb_blaster_vid_pid 0x4d8 0xefd0
+
+# Expected ID is for 10M50DAF256 device
+jtag newtap max10 fpga -irlen 10 -expected-id 0x031050dd
+init
