@@ -15,6 +15,7 @@ end entity data_gen;
 
 architecture rtl of data_gen is
   signal d : std_logic_vector(DATA_WIDTH-1 downto 0) := (others => '0');
+  signal d_next : std_logic_vector(DATA_WIDTH-1 downto 0);
 begin
 
   data <= d;
@@ -25,8 +26,18 @@ begin
       d <= (others => '0');
     elsif rising_edge(clk) then
       if en = '1' then
-        d <= std_logic_vector(unsigned(d) + 1);
+        d <= d_next;
       end if;
+    end if;
+  end process;
+
+  process (d, mode)
+  begin
+    if mode = '0' then
+      d_next <= std_logic_vector(unsigned(d) + 1);
+    else
+      d_next(7 downto 1) <= d(6 downto 0);
+      d_next(0) <= d(7) xor d(5) xor d(4) xor d(3);
     end if;
   end process;
 
