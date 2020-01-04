@@ -29,8 +29,15 @@ entity mx10 is
 end mx10;
 
 architecture top of mx10 is
+
+  constant DATA_WIDTH : integer := 8;
+
   signal clk, reset : std_logic;
   signal rst_n : std_logic_vector(4 downto 0) := (others => '0');
+
+  signal enable : std_logic;
+  signal data : std_logic_vector(DATA_WIDTH-1 downto 0);
+
 begin
 
   clk <= clk25;
@@ -57,7 +64,7 @@ begin
   scl <= 'Z';
   sda <= 'Z';
 
-  pmod_J2 <= (others => 'Z');
+  pmod_J2 <= data;
   pmod_J3 <= (others => 'Z');
   pmod_J4 <= (others => 'Z');
   pmod_J5 <= (others => 'Z');
@@ -67,5 +74,23 @@ begin
 
   led(0) <= not button(0);
   led(1) <= not button(1);
+
+  u0: entity work.clk_div
+    generic map (
+      DIV => 12500000)
+    port map (
+      clk => clk,
+      reset => reset,
+      pulse => enable);
+
+  u1: entity work.data_gen
+    generic map (
+      DATA_WIDTH => DATA_WIDTH)
+    port map (
+      clk => clk,
+      reset => reset,
+      mode => '0',
+      en => enable,
+      data => data);
 
 end top;
