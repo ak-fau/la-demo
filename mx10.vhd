@@ -38,6 +38,14 @@ architecture top of mx10 is
   signal enable : std_logic;
   signal data : std_logic_vector(DATA_WIDTH-1 downto 0);
 
+  signal pulse_1ms : std_logic;
+
+  signal btn0, btn1 : std_logic;
+  signal btn0d, btn1d : std_logic := '0';
+  signal btn0_down, btn1_down : std_logic;
+
+  signal mode : std_logic := '0';
+
 begin
 
   clk <= clk25;
@@ -72,8 +80,8 @@ begin
   -- sd_vsel <= '1'; -- 1.8V
   sd_vsel <= '0'; -- 3.3V
 
-  led(0) <= not button(0);
-  led(1) <= not button(1);
+  led(0) <= btn0;
+  led(1) <= mode;
 
   u0: entity work.clk_div
     generic map (
@@ -89,8 +97,57 @@ begin
     port map (
       clk => clk,
       reset => reset,
-      mode => '0',
-      en => enable,
+      mode => mode,
+      en => btn0_down, -- enable,
       data => data);
+
+  u2_0: entity work.clk_div
+    generic map (
+      DIV => 25000)
+    port map (
+      clk => clk,
+      reset => reset,
+      pulse => pulse_1ms);
+
+  u2_1: entity work.debounce
+    port map (
+      clk => clk,
+      reset => reset,
+      p1ms => pulse_1ms,
+      d => button(0),
+      q => btn0);
+
+  u2_2: entity work.debounce
+    port map (
+      clk => clk,
+      reset => reset,
+      p1ms => pulse_1ms,
+      d => button(1),
+      q => btn1);
+
+  process (clk, reset)
+  begin
+    if reset = '1' then
+      btn0d <= '0';
+      btn1d <= '0';
+    elsif rising_edge(clk) then
+      btn0d <= btn0;
+      btn1d <= btn1;
+    end if;
+  end process;
+
+  btn0_down <= '1' when btn0 = '1' and btn0d = '0' else '0';
+  btn1_down <= '1' when btn1 = '1' and btn1d = '0' else '0';
+
+  process (clk, reset)
+  begin
+    if reset = '1' then
+      mode <= '0';
+    elsif rising_edge(clk) then
+      if btn1_down = '1' then
+        mode <= not mode;
+      end if;
+    end if;
+  end process;
 
 end top;
