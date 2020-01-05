@@ -40,10 +40,10 @@ svf: $(OUTPUT_DIR)/$(CONFIG).sof.svf $(OUTPUT_DIR)/$(CONFIG).pof.svf
 
 QUARTUS_CPF := $(QUARTUS)_cpf --convert --frequency=5MHz --voltage=2.5V
 
-%.pof.svf: %.pof asm.chg
+%.pof.svf: %.pof $(OUTPUT_DIR)/$(CONFIG).asm.rpt
 	$(QUARTUS_CPF) --operation=pb $< $@
 
-%.sof.svf: %.sof asm.chg
+%.sof.svf: %.sof $(OUTPUT_DIR)/$(CONFIG).asm.rpt
 	$(QUARTUS_CPF) --operation=v $< $@
 
 $(OUTPUT_DIR)/$(CONFIG).sof: asm
