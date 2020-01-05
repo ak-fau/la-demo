@@ -39,12 +39,15 @@ architecture top of mx10 is
   signal data : std_logic_vector(DATA_WIDTH-1 downto 0);
 
   signal pulse_1ms : std_logic;
+  signal pulse_500ms : std_logic;
 
   signal btn0, btn1 : std_logic;
   signal btn0d, btn1d : std_logic := '0';
   signal btn0_down, btn1_down : std_logic;
 
   signal mode : std_logic := '0';
+  signal auto : std_logic := '0';
+  signal fast : std_logic := '0';
 
 begin
 
@@ -89,7 +92,9 @@ begin
     port map (
       clk => clk,
       reset => reset,
-      pulse => enable);
+      pulse => pulse_500ms);
+
+  enable <= '1' when fast = '1' else pulse_500ms when auto = '1' else btn0_down;
 
   u1: entity work.data_gen
     generic map (
@@ -98,7 +103,7 @@ begin
       clk => clk,
       reset => reset,
       mode => mode,
-      en => btn0_down, -- enable,
+      en => enable,
       data => data);
 
   u2_0: entity work.clk_div
@@ -143,9 +148,24 @@ begin
   begin
     if reset = '1' then
       mode <= '0';
+      auto <= '0';
+      fast <= '0';
     elsif rising_edge(clk) then
       if btn1_down = '1' then
-        mode <= not mode;
+        if btn0 = '1' then
+          if auto = '0' then
+            auto <= '1';
+          else
+            if fast = '0' then
+              fast <= '1';
+            else
+              auto <= '0';
+              fast <= '0';
+            end if;
+          end if;
+        else
+          mode <= not mode;
+        end if;
       end if;
     end if;
   end process;
