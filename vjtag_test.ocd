@@ -15,8 +15,10 @@ proc vdr_scan {tap length data} {
     return [drscan $tap $length $data]
 }
 
-echo [ vir_scan max10.fpga 0x11 ]
+vir_scan max10.fpga 0x11
+echo [ vdr_scan max10.fpga 8 0xf0]
 sleep 500
-echo [ vir_scan max10.fpga 0x10 ]
+vir_scan max10.fpga 0x10
+echo [ vdr_scan max10.fpga 8 0x00]
 
 shutdown

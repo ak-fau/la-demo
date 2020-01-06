@@ -38,6 +38,11 @@ architecture top of mx10 is
   signal jtag_ir_in  : std_logic_vector(VJTAG_IR_LEN-1 downto 0);
   signal jtag_ir_out : std_logic_vector(VJTAG_IR_LEN-1 downto 0);
 
+  signal jtag_tlr : std_logic;
+  signal v_cdr, v_sdr, v_udr : std_logic;
+  signal dr_s : std_logic_vector(7 downto 0);
+  signal dr : std_logic_vector(7 downto 0);
+
   component v_jtag is
     port (
       tck                : out std_logic;
@@ -98,7 +103,7 @@ begin
   scl <= 'Z';
   sda <= 'Z';
 
-  pmod_J2 <= (others => 'Z');
+  pmod_J2 <= dr;
   pmod_J3 <= (others => 'Z');
   pmod_J4 <= (others => 'Z');
   pmod_J5 <= (others => 'Z');
@@ -117,15 +122,15 @@ begin
       tdo                => jtag_tdo,
       ir_in              => jtag_ir_in,
       ir_out             => jtag_ir_out,
-      virtual_state_cdr  => open,
-      virtual_state_sdr  => open,
+      virtual_state_cdr  => v_cdr,
+      virtual_state_sdr  => v_sdr,
       virtual_state_e1dr => open,
       virtual_state_pdr  => open,
       virtual_state_e2dr => open,
-      virtual_state_udr  => open,
+      virtual_state_udr  => v_udr,
       virtual_state_cir  => open,
       virtual_state_uir  => open,
-      jtag_state_tlr     => open,
+      jtag_state_tlr     => jtag_tlr,
       jtag_state_rti     => open,
       jtag_state_sdrs    => open,
       jtag_state_cdr     => open,
@@ -142,9 +147,38 @@ begin
       jtag_state_e2ir    => open,
       jtag_state_uir     => open);
 
-  jtag_tdo <= jtag_tdi;
+  -- jtag_tdo <= jtag_tdi;
   jtag_ir_out <= (others => '0');
 
   led_green <= jtag_ir_in(0);
+
+  process (jtag_tck, reset)
+  begin
+    if reset = '1' then
+      dr <= (others => '0');
+    elsif falling_edge(jtag_tck) then
+      if v_udr = '1' then
+        dr <= dr_s;
+      end if;
+    end if;
+  end process;
+
+  process (jtag_tck, reset)
+  begin
+    if reset = '1' then
+      dr_s <= (others => '0');
+    elsif rising_edge(jtag_tck) then
+      if jtag_tlr = '1' then
+        dr_s <= (others => '0');
+      elsif v_cdr = '1' then
+        dr_s <= x"C" & "000" & jtag_ir_in(0);
+      elsif v_sdr = '1' then
+        dr_s(dr_s'left-1 downto 0) <= dr_s(dr_s'left downto 1);
+        dr_s(dr_s'left) <= jtag_tdi;
+      end if;
+    end if;
+  end process;
+
+  jtag_tdo <= dr_s(0);
 
 end top;
