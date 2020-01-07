@@ -1,19 +1,6 @@
 scan_chain
 
-set vir_length 5
-set sld_id 0x10
-
-proc vir_scan {tap data} {
-    global vir_length
-    global sld_id
-    irscan $tap 0x00e
-    return [drscan $tap $vir_length [expr ($sld_id | $data)]]
-}
-
-proc vdr_scan {tap length data} {
-    irscan $tap 0x00c
-    return [drscan $tap $length $data]
-}
+source vjtag.ocd
 
 vir_scan max10.fpga 0x11
 echo [ vdr_scan max10.fpga 8 0xf0]
