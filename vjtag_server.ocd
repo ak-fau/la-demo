@@ -1,0 +1,4 @@
+scan_chain
+#debug_level 1
+log_output /dev/null
+source vjtag.ocd

@@ -32,6 +32,11 @@ clean:
 	$(RM) -r $(OUTPUT_DIR)
 	$(RM) *~ *.rpt *.chg *.htm *.txt *.eqn *.pin *.sof *.pof *.summary
 
+.PHONY: vjtag_test vjtag_server
+
+vjtag_test vjtag_server:
+	-$(OPENOCD) -f $(OCD_HW_CONFIG) -f $@.ocd
+
 .PHONY: svf pgm cfg
 
 pgm: $(OUTPUT_DIR)/$(CONFIG).pof.svf
