@@ -62,10 +62,21 @@ architecture rtl of vjtag_registers is
   signal j_t_addr : std_logic_vector(ADDR_WIDTH-1 downto 0);
   signal j_data : std_logic_vector(DATA_WIDTH downto 0);
 
-  signal cmd_r : std_logic_vector(CSR_WIDTH-1 downto 0);
-  signal tm_r : std_logic_vector(DATA_WIDTH-1 downto 0);
-  signal td_r : std_logic_vector(DATA_WIDTH-1 downto 0);
-  signal t_post_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal status_r0 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal t_addr_r0 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal status_r1 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal t_addr_r1 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal cmd_r0 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal tm_r0 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal td_r0 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal t_post_r0 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal cmd_r1 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal tm_r1 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal td_r1 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal t_post_r1 : std_logic_vector(ADDR_WIDTH-1 downto 0);
 
 begin
 
@@ -192,5 +203,55 @@ begin
   mclk <= jtag_tck;
   maddr <= j_addr_r;
   j_data <= mdata;
+
+  -- Clock Domain Crossing for control registers
+  -- (from TCK to system clock)
+  process (clk, reset)
+  begin
+    if reset = '1' then
+      cmd_r0 <= (others => '0');
+      tm_r0 <= (others => '0');
+      td_r0 <= (others => '0');
+      t_post_r0 <= (others => '0');
+      cmd_r0 <= (others => '0');
+      tm_r0 <= (others => '0');
+      td_r0 <= (others => '0');
+      t_post_r0 <= (others => '0');
+    elsif rising_edge(clk) then
+      cmd_r0 <= j_cmd_r;
+      tm_r0 <= j_tm_r;
+      td_r0 <= j_td_r;
+      t_post_r0 <= j_t_post_r;
+      cmd_r1 <= cmd_r0;
+      tm_r1 <= tm_r0;
+      td_r1 <= td_r0;
+      t_post_r1 <= t_post_r0;
+    end if;
+  end process;
+
+  cmd <= cmd_r1;
+  t_mask <= tm_r1;
+  t_data <= td_r1;
+  t_post <= t_post_r1;
+
+  -- clock Domain Crossing for status registers
+  -- (from system clock to TCK)
+  process (jtag_tck, jtag_tlr)
+  begin
+    if jtag_tlr = '1' then
+      status_r0 <= (others => '0');
+      t_addr_r0 <= (others => '0');
+      status_r1 <= (others => '0');
+      t_addr_r1 <= (others => '0');
+    elsif rising_edge(jtag_tck) then
+      status_r0 <= status;
+      t_addr_r0 <= t_addr;
+      status_r1 <= status_r0;
+      t_addr_r1 <= t_addr_r0;
+    end if;
+  end process;
+
+  j_status <= status_r1;
+  j_t_addr <= t_addr_r1;
 
 end architecture rtl;
