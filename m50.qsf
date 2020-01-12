@@ -37,6 +37,8 @@ source spider-baseboard-pins.tcl
 
 set_global_assignment -name VHDL_FILE mx10.vhd
 set_global_assignment -name VHDL_FILE la.vhd
+set_global_assignment -name VHDL_FILE la_trigger.vhd
+set_global_assignment -name VHDL_FILE la_control.vhd
 set_global_assignment -name VHDL_FILE vjtag_registers.vhd
 set_global_assignment -name QIP_FILE v_jtag/synthesis/v_jtag.qip
 set_global_assignment -name VHDL_FILE clk_div.vhd

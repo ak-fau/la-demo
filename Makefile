@@ -4,6 +4,7 @@ CONFIG  := m50
 VHDL_FILES := mx10.vhd
 VHDL_FILES += la.vhd
 VHDL_FILES += vjtag_registers.vhd
+VHDL_FILES += la_trigger.vhd la_control.vhd
 VHDL_FILES += clk_div.vhd data_gen.vhd debounce.vhd
 
 PIN_ASSIGNMENTS := mx10-pins.tcl
