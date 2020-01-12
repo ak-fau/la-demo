@@ -2,7 +2,9 @@ PROJECT := mx10-base
 CONFIG  := m50
 
 VHDL_FILES := mx10.vhd
-VHDL_FILES += vjtag.vhd
+VHDL_FILES += la.vhd
+VHDL_FILES += vjtag_registers.vhd
+VHDL_FILES += clk_div.vhd data_gen.vhd debounce.vhd
 
 PIN_ASSIGNMENTS := mx10-pins.tcl
 PIN_ASSIGNMENTS += spider-baseboard-pins.tcl

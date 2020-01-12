@@ -4,15 +4,29 @@ use IEEE.std_logic_1164.all;
 library altera_mf;
 use altera_mf.altera_mf_components.all;
 
-entity vjtag is
+entity vjtag_registers is
+  generic (
+    DATA_WIDTH : integer := 8;
+    ADDR_WIDTH : integer := 10);
   port (
-    reset : in std_logic;
-    ir0 : out std_logic;
-    data: out std_logic_vector(7 downto 0));
-end entity vjtag;
+    clk    : in  std_logic;
+    reset  : in  std_logic;
+    cmd    : out std_logic_vector(7 downto 0);
+    status : in  std_logic_vector(7 downto 0);
+    addr_o : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    addr_i : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+    addr_u : out std_logic;
+    data_i : in  std_logic_vector(DATA_WIDTH   downto 0); -- plus one bit!!
+    t_mask : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    t_data : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    --t_re   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    --t_fe   : out std_logic_vector(DATA_WIDTH-1 downto 0);
+    t_post : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    t_addr : in  std_logic_vector(ADDR_WIDTH-1 downto 0));
+end entity vjtag_registers;
 
-architecture rtl of vjtag is
-  constant VJTAG_IR_LEN : integer := 1;
+architecture rtl of vjtag_registers is
+  constant VJTAG_IR_LEN : integer := 4;
 
   signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_logic;
   signal jtag_ir_in  : std_logic_vector(VJTAG_IR_LEN-1 downto 0);
@@ -25,14 +39,11 @@ architecture rtl of vjtag is
 
 begin
 
-  ir0 <= jtag_ir_in(0);
-  data <= dr;
-
   u0 : component sld_virtual_jtag
    generic map (
       sld_auto_instance_index => "NO",
       sld_instance_index => 1,
-      sld_ir_width => 1)
+      sld_ir_width => VJTAG_IR_LEN)
     port map (
       tck                => jtag_tck,
       tms                => jtag_tms,
