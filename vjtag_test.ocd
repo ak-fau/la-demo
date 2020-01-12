@@ -2,10 +2,18 @@ scan_chain
 
 source vjtag.ocd
 
-vir_scan max10.fpga 0x11
-echo [ vdr_scan max10.fpga 8 0xf0]
-sleep 500
-vir_scan max10.fpga 0x10
+vir_scan max10.fpga 0x14
+echo [ vdr_scan max10.fpga 8 0xaa]
+echo [ vdr_scan max10.fpga 8 0x55]
 echo [ vdr_scan max10.fpga 8 0x00]
+
+vir_scan max10.fpga 0x19
+echo [ vdr_scan max10.fpga 10 0x123]
+echo [ vdr_scan max10.fpga 10 0x155]
+echo [ vdr_scan max10.fpga 10 0x2aa]
+echo [ vdr_scan max10.fpga 10 0x000]
+
+echo [ vdr_scan max10.fpga 10 0xffff]
+echo [ vdr_scan max10.fpga 10 0x0000]
 
 shutdown
