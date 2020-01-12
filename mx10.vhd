@@ -86,6 +86,8 @@ begin
   led(0) <= btn0;
   led(1) <= mode;
 
+  -- Enable signal for visible LED effects
+  --
   u0: entity work.clk_div
     generic map (
       DIV => 12500000)
@@ -94,8 +96,15 @@ begin
       reset => reset,
       pulse => pulse_500ms);
 
+  -- LED (data pattern) switching rate:
+  --   system clock (25 MHz)
+  --   2 Hz
+  --   manual (push button)
   enable <= '1' when fast = '1' else pulse_500ms when auto = '1' else btn0_down;
 
+  -- Pattern generator:
+  --   binary counter
+  --   LFSR-8
   u1: entity work.data_gen
     generic map (
       DATA_WIDTH => DATA_WIDTH)
@@ -106,6 +115,7 @@ begin
       en => enable,
       data => data);
 
+  -- 1ms interval for push-button debouncers
   u2_0: entity work.clk_div
     generic map (
       DIV => 25000)
@@ -130,6 +140,7 @@ begin
       d => button(1),
       q => btn1);
 
+  -- Generate single-clock pulses for button down events
   process (clk, reset)
   begin
     if reset = '1' then
@@ -144,6 +155,15 @@ begin
   btn0_down <= '1' when btn0 = '1' and btn0d = '0' else '0';
   btn1_down <= '1' when btn1 = '1' and btn1d = '0' else '0';
 
+  -- Mode switcher:
+  --   on button 1 down even
+  --   if button 0 is not pressed, then
+  --     switch between counter and LFSR modes
+  --   if button 0 is depressed then
+  --     switch speed in cycle
+  --     - manual (auto = 0, fast = 0)
+  --     - 2 Hz   (auto = 1, fast = 0)
+  --     - 25 MHz (auto = 1, fast = 1)
   process (clk, reset)
   begin
     if reset = '1' then
