@@ -1,0 +1,11 @@
+scan_chain
+
+source vjtag.ocd
+
+vir_scan max10.fpga 0x11
+echo [ vdr_scan max10.fpga 8 0xf0]
+sleep 500
+vir_scan max10.fpga 0x10
+echo [ vdr_scan max10.fpga 8 0x00]
+
+shutdown

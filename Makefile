@@ -2,6 +2,7 @@ PROJECT := mx10-base
 CONFIG  := m50
 
 VHDL_FILES := mx10.vhd
+VHDL_FILES += vjtag.vhd
 
 PIN_ASSIGNMENTS := mx10-pins.tcl
 PIN_ASSIGNMENTS += spider-baseboard-pins.tcl
@@ -31,6 +32,11 @@ distclean: clean
 clean:
 	$(RM) -r $(OUTPUT_DIR)
 	$(RM) *~ *.rpt *.chg *.htm *.txt *.eqn *.pin *.sof *.pof *.summary
+
+.PHONY: vjtag_test vjtag_server
+
+vjtag_test vjtag_server:
+	-$(OPENOCD) -f $(OCD_HW_CONFIG) -f $@.ocd
 
 .PHONY: svf pgm cfg
 

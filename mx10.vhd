@@ -29,8 +29,12 @@ entity mx10 is
 end mx10;
 
 architecture top of mx10 is
+
   signal clk, reset : std_logic;
   signal rst_n : std_logic_vector(4 downto 0) := (others => '0');
+
+  signal pmod_led8 : std_logic_vector(7 downto 0);
+
 begin
 
   clk <= clk25;
@@ -52,12 +56,12 @@ begin
   dbg_txd <= dbg_rxd;
 
   led_amber <= reset;
-  led_green <= '0';
+  -- led_green <= '0';
 
   scl <= 'Z';
   sda <= 'Z';
 
-  pmod_J2 <= (others => 'Z');
+  pmod_J2 <= pmod_led8;
   pmod_J3 <= (others => 'Z');
   pmod_J4 <= (others => 'Z');
   pmod_J5 <= (others => 'Z');
@@ -67,5 +71,11 @@ begin
 
   led(0) <= not button(0);
   led(1) <= not button(1);
+
+  u0: entity work.vjtag
+    port map (
+      reset => reset,
+      ir0   => led_green,
+      data  => pmod_led8);
 
 end top;
