@@ -17,12 +17,13 @@ architecture struct of la is
 
   signal cmd : std_logic_vector(7 downto 0);
   signal status : std_logic_vector(7 downto 0);
-  signal maddr_o : std_logic_vector(ADDR_WIDTH-1 downto 0);
-  signal maddr : std_logic_vector(ADDR_WIDTH-1 downto 0) := (others => '0');
-  signal maddr_update : std_logic;
-  signal rd_data : std_logic_vector(DATA_WIDTH downto 0); -- plus 1 bit!!
   signal t_mask, t_data : std_logic_vector(DATA_WIDTH-1 downto 0);
   signal t_post, t_addr : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  -- TCK clock domain (DPRAM read port)
+  signal mclk : std_logic;
+  signal maddr : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal mdata : std_logic_vector(DATA_WIDTH downto 0); -- plus 1 bit!!
 
 begin
 
@@ -30,18 +31,33 @@ begin
     port map (
       clk    => clk,
       reset  => reset,
+
+      -- System clock domain
       cmd    => cmd,
       status => status,
-      addr_o => maddr_o,
-      addr_i => maddr,
-      addr_u => maddr_update,
-      data_i => rd_data,
       t_mask => t_mask,
       t_data => t_data,
       --t_re   => t_re,
       --t_fe   => t_fe,
       t_post => t_post,
-      t_addr => t_addr
+      t_addr => t_addr,
+
+      -- TCK clock domain
+      mclk  => mclk,
+      maddr => maddr,
+      mdata => mdata
       );
+
+  u1: entity work.dpram
+    port map (
+      -- Write port
+      wrclock	 => clk,
+      wraddress	 => (others => '0'),
+      data	 => (others => '0'),
+      wren	 => '0',
+      -- Read port
+      rdclock	 => mclk,
+      rdaddress	 => maddr,
+      q	 => mdata);
 
 end architecture struct;

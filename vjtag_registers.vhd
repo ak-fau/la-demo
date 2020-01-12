@@ -1,5 +1,6 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library altera_mf;
 use altera_mf.altera_mf_components.all;
@@ -12,18 +13,22 @@ entity vjtag_registers is
   port (
     clk    : in  std_logic;
     reset  : in  std_logic;
+
+    -- System clock domain
     cmd    : out std_logic_vector(CSR_WIDTH-1 downto 0);
     status : in  std_logic_vector(CSR_WIDTH-1 downto 0);
-    addr_o : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    addr_i : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-    addr_u : out std_logic;
-    data_i : in  std_logic_vector(DATA_WIDTH   downto 0); -- plus one bit!!
     t_mask : out std_logic_vector(DATA_WIDTH-1 downto 0);
     t_data : out std_logic_vector(DATA_WIDTH-1 downto 0);
     --t_re   : out std_logic_vector(DATA_WIDTH-1 downto 0);
     --t_fe   : out std_logic_vector(DATA_WIDTH-1 downto 0);
     t_post : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    t_addr : in  std_logic_vector(ADDR_WIDTH-1 downto 0));
+    t_addr : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+    -- TCK clock domain
+    mclk   : out std_logic;
+    maddr  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    mdata  : in  std_logic_vector(DATA_WIDTH   downto 0) -- plus one bit!!
+    );
 end entity vjtag_registers;
 
 architecture rtl of vjtag_registers is
@@ -54,11 +59,9 @@ architecture rtl of vjtag_registers is
   signal j_t_post_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
 
   signal j_status : std_logic_vector(CSR_WIDTH-1 downto 0);
-  signal j_addr : std_logic_vector(ADDR_WIDTH-1 downto 0);
   signal j_t_addr : std_logic_vector(ADDR_WIDTH-1 downto 0);
   signal j_data : std_logic_vector(DATA_WIDTH downto 0);
 
-  signal addr_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
   signal cmd_r : std_logic_vector(CSR_WIDTH-1 downto 0);
   signal tm_r : std_logic_vector(DATA_WIDTH-1 downto 0);
   signal td_r : std_logic_vector(DATA_WIDTH-1 downto 0);
@@ -128,6 +131,8 @@ begin
             j_t_post_r <= shift_reg(ADDR_WIDTH-1 downto 0);
           when others => null;
         end case;
+      elsif v_cdr = '1' and jtag_ir_in = IR_DATA then
+        j_addr_r <= std_logic_vector(unsigned(j_addr_r)+1);
       end if;
     end if;
   end process;
@@ -152,7 +157,7 @@ begin
           when IR_T_DATA =>
             shift_reg <= "00" & j_td_r;
           when IR_ADDR =>
-            shift_reg <= j_addr;
+            shift_reg <= j_addr_r;
           when IR_POST =>
             shift_reg <= j_t_post_r;
           when IR_T_ADDR =>
@@ -181,5 +186,11 @@ begin
   end process;
 
   jtag_tdo <= shift_reg(0);
+
+  -- DPRAM (read port) signals
+  -- TCK clock domain
+  mclk <= jtag_tck;
+  maddr <= j_addr_r;
+  j_data <= mdata;
 
 end architecture rtl;

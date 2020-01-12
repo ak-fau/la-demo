@@ -2,18 +2,41 @@ scan_chain
 
 source vjtag.ocd
 
+echo ""
+echo "8-bit scan (Trigger Mask register)"
+echo ""
 vir_scan max10.fpga 0x14
 echo [ vdr_scan max10.fpga 8 0xaa]
 echo [ vdr_scan max10.fpga 8 0x55]
 echo [ vdr_scan max10.fpga 8 0x00]
 
+echo ""
+echo "10-bit scan (Post Store register)"
+echo ""
 vir_scan max10.fpga 0x19
 echo [ vdr_scan max10.fpga 10 0x123]
 echo [ vdr_scan max10.fpga 10 0x155]
 echo [ vdr_scan max10.fpga 10 0x2aa]
 echo [ vdr_scan max10.fpga 10 0x000]
-
 echo [ vdr_scan max10.fpga 10 0xffff]
 echo [ vdr_scan max10.fpga 10 0x0000]
+echo [ vdr_scan max10.fpga 10 0x0000]
+
+echo ""
+echo "9-bit scan (Data register) and address post-increment"
+echo ""
+vir_scan max10.fpga 0x18
+echo "Addr: "[ vdr_scan max10.fpga 10 0x000]
+echo "Addr: "[ vdr_scan max10.fpga 10 0x000]
+
+vir_scan max10.fpga 0x12
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+echo "Data: "[ vdr_scan max10.fpga 9 0]
+vir_scan max10.fpga 0x18
+echo "Addr: "[ vdr_scan max10.fpga 10 0x000]
 
 shutdown
