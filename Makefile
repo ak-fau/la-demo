@@ -14,7 +14,11 @@ STAMP := echo done >
 RM    := rm -f
 
 QUARTUS := quartus
+
 OPENOCD := openocd
+OCD_HW_CONFIG := mx10.ocd
+OCD_SVF_CMD = "svf -quiet -progress $<"
+OCD_COMMAND = $(OPENOCD) -f $(OCD_HW_CONFIG) -c $(OCD_SVF_CMD) -c "shutdown"
 
 .PHONY: all clean distclean
 
@@ -31,10 +35,10 @@ clean:
 .PHONY: svf pgm cfg
 
 pgm: $(OUTPUT_DIR)/$(CONFIG).pof.svf
-	$(OPENOCD) -f mx10.ocd -c "svf $<" -c "shutdown"
+	$(OCD_COMMAND)
 
 cfg: $(OUTPUT_DIR)/$(CONFIG).sof.svf
-	$(OPENOCD) -f mx10.ocd -c "svf $<" -c "shutdown"
+	$(OCD_COMMAND)
 
 svf: $(OUTPUT_DIR)/$(CONFIG).sof.svf $(OUTPUT_DIR)/$(CONFIG).pof.svf
 
