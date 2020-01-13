@@ -2,10 +2,74 @@ scan_chain
 
 source vjtag.ocd
 
-vir_scan max10.fpga 0x11
-echo [ vdr_scan max10.fpga 8 0xf0]
-sleep 500
-vir_scan max10.fpga 0x10
+echo ""
+echo "8-bit scan (Trigger Mask register)"
+echo ""
+vir_scan max10.fpga 0x14
+echo [ vdr_scan max10.fpga 8 0xaa]
+echo [ vdr_scan max10.fpga 8 0x55]
 echo [ vdr_scan max10.fpga 8 0x00]
+
+echo ""
+echo "10-bit scan (Post Store register)"
+echo ""
+vir_scan max10.fpga 0x19
+echo [ vdr_scan max10.fpga 10 0x123]
+echo [ vdr_scan max10.fpga 10 0x155]
+echo [ vdr_scan max10.fpga 10 0x2aa]
+echo [ vdr_scan max10.fpga 10 0x000]
+echo [ vdr_scan max10.fpga 10 0xffff]
+echo [ vdr_scan max10.fpga 10 0x0000]
+echo [ vdr_scan max10.fpga 10 0x0000]
+
+vir_scan max10.fpga 0x10
+echo "Status: "[ vdr_scan max10.fpga 8 0]
+
+vir_scan max10.fpga 0x11
+vdr_scan max10.fpga 8 0x80
+vdr_scan max10.fpga 8 0x00
+
+vir_scan max10.fpga 0x10
+echo "Status: "[ vdr_scan max10.fpga 8 0]
+
+# Trigger Mask
+vir_scan max10.fpga 0x14
+vdr_scan max10.fpga 8 0xff
+# Trigger Data
+vir_scan max10.fpga 0x15
+vdr_scan max10.fpga 8 0x42
+
+echo "Start..."
+vir_scan max10.fpga 0x11
+vdr_scan max10.fpga 8 0x01
+
+vir_scan max10.fpga 0x10
+echo "Status: "[ vdr_scan max10.fpga 8 0]
+
+vir_scan max10.fpga 0x1a
+set t_addr [ vdr_scan max10.fpga 10 0]
+echo "Trigger address: $t_addr"
+
+# set addr [expr 0x$t_addr - 1]
+
+set addr [expr 0x$t_addr]
+
+echo "Memory starting from $addr"
+vir_scan max10.fpga 0x18
+vdr_scan max10.fpga 10 $addr
+
+vir_scan max10.fpga 0x12
+for {set a 0} {$a < 10} {incr a} {
+  echo [ vdr_scan max10.fpga 9 0]
+}
+
+# echo "Buffer memory dump"
+# vir_scan max10.fpga 0x18
+# vdr_scan max10.fpga 10 0x000
+
+# vir_scan max10.fpga 0x12
+# for {set a 0} {$a < 0x3ff} {incr a} {
+#   echo [ vdr_scan max10.fpga 9 0]
+# }
 
 shutdown

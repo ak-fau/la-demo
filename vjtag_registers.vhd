@@ -1,5 +1,6 @@
-library IEEE;
-use IEEE.std_logic_1164.all;
+library ieee;
+use ieee.std_logic_1164.all;
+use ieee.numeric_std.all;
 
 library altera_mf;
 use altera_mf.altera_mf_components.all;
@@ -7,26 +8,40 @@ use altera_mf.altera_mf_components.all;
 entity vjtag_registers is
   generic (
     DATA_WIDTH : integer := 8;
-    ADDR_WIDTH : integer := 10);
+    ADDR_WIDTH : integer := 10;
+    CSR_WIDTH  : integer := 8);
   port (
     clk    : in  std_logic;
     reset  : in  std_logic;
-    cmd    : out std_logic_vector(7 downto 0);
-    status : in  std_logic_vector(7 downto 0);
-    addr_o : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    addr_i : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
-    addr_u : out std_logic;
-    data_i : in  std_logic_vector(DATA_WIDTH   downto 0); -- plus one bit!!
+
+    -- System clock domain
+    cmd    : out std_logic_vector(CSR_WIDTH-1 downto 0);
+    status : in  std_logic_vector(CSR_WIDTH-1 downto 0);
     t_mask : out std_logic_vector(DATA_WIDTH-1 downto 0);
     t_data : out std_logic_vector(DATA_WIDTH-1 downto 0);
     --t_re   : out std_logic_vector(DATA_WIDTH-1 downto 0);
     --t_fe   : out std_logic_vector(DATA_WIDTH-1 downto 0);
     t_post : out std_logic_vector(ADDR_WIDTH-1 downto 0);
-    t_addr : in  std_logic_vector(ADDR_WIDTH-1 downto 0));
+    t_addr : in  std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+    -- TCK clock domain
+    mclk   : out std_logic;
+    maddr  : out std_logic_vector(ADDR_WIDTH-1 downto 0);
+    mdata  : in  std_logic_vector(DATA_WIDTH   downto 0) -- plus one bit!!
+    );
 end entity vjtag_registers;
 
 architecture rtl of vjtag_registers is
   constant VJTAG_IR_LEN : integer := 4;
+
+  constant IR_STATUS : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"0";
+  constant IR_CMD    : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"1";
+  constant IR_DATA   : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"2";
+  constant IR_T_MASK : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"4";
+  constant IR_T_DATA : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"5";
+  constant IR_ADDR   : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"8";
+  constant IR_POST   : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"9";
+  constant IR_T_ADDR : std_logic_vector(VJTAG_IR_LEN-1 downto 0) := x"a";
 
   signal jtag_tck, jtag_tms, jtag_tdi, jtag_tdo : std_logic;
   signal jtag_ir_in  : std_logic_vector(VJTAG_IR_LEN-1 downto 0);
@@ -34,8 +49,34 @@ architecture rtl of vjtag_registers is
 
   signal jtag_tlr : std_logic;
   signal v_cdr, v_sdr, v_udr : std_logic;
-  signal dr_s : std_logic_vector(7 downto 0);
-  signal dr : std_logic_vector(7 downto 0);
+
+  signal shift_reg : std_logic_vector(ADDR_WIDTH-1 downto 0); -- max length
+
+  signal j_addr_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal j_cmd_r : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal j_tm_r : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal j_td_r : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal j_t_post_r : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal j_status : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal j_t_addr : std_logic_vector(ADDR_WIDTH-1 downto 0);
+  signal j_data : std_logic_vector(DATA_WIDTH downto 0);
+
+  signal status_r0 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal t_addr_r0 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal status_r1 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal t_addr_r1 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal cmd_r0 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal tm_r0 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal td_r0 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal t_post_r0 : std_logic_vector(ADDR_WIDTH-1 downto 0);
+
+  signal cmd_r1 : std_logic_vector(CSR_WIDTH-1 downto 0);
+  signal tm_r1 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal td_r1 : std_logic_vector(DATA_WIDTH-1 downto 0);
+  signal t_post_r1 : std_logic_vector(ADDR_WIDTH-1 downto 0);
 
 begin
 
@@ -78,33 +119,139 @@ begin
 
   jtag_ir_out <= (others => '0');
 
-  process (jtag_tck, reset)
+  process (jtag_tck, jtag_tlr)
   begin
-    if reset = '1' then
-      dr <= (others => '0');
+    if jtag_tlr = '1' then
+      j_addr_r <= (others => '0');
+      j_cmd_r <= (others => '0');
+      j_tm_r <= (others => '0');
+      j_td_r <= (others => '0');
+      j_t_post_r <= (others => '0');
     elsif falling_edge(jtag_tck) then
       if v_udr = '1' then
-        dr <= dr_s;
+        case jtag_ir_in is
+          when IR_CMD =>
+            j_cmd_r <= shift_reg(CSR_WIDTH-1 downto 0);
+          when IR_T_MASK =>
+            j_tm_r <= shift_reg(DATA_WIDTH-1 downto 0);
+          when IR_T_DATA =>
+            j_td_r <= shift_reg(DATA_WIDTH-1 downto 0);
+          when IR_ADDR =>
+            j_addr_r <= shift_reg(ADDR_WIDTH-1 downto 0);
+          when IR_POST =>
+            j_t_post_r <= shift_reg(ADDR_WIDTH-1 downto 0);
+          when others => null;
+        end case;
+      elsif v_cdr = '1' and jtag_ir_in = IR_DATA then
+        j_addr_r <= std_logic_vector(unsigned(j_addr_r)+1);
       end if;
     end if;
   end process;
 
-  process (jtag_tck, reset)
+  process (jtag_tck, jtag_tlr)
   begin
-    if reset = '1' then
-      dr_s <= (others => '0');
+    if jtag_tlr = '1' then
+      shift_reg <= (others => '0');
     elsif rising_edge(jtag_tck) then
       if jtag_tlr = '1' then
-        dr_s <= (others => '0');
+        shift_reg <= (others => '0');
       elsif v_cdr = '1' then
-        dr_s <= x"C" & "000" & jtag_ir_in(0);
+        case jtag_ir_in is
+          when IR_STATUS =>
+            shift_reg <= "00" & j_status;
+          when IR_CMD =>
+            shift_reg <= "00" & j_cmd_r;
+          when IR_DATA =>
+            shift_reg <= "0" & j_data;
+          when IR_T_MASK =>
+            shift_reg <= "00" & j_tm_r;
+          when IR_T_DATA =>
+            shift_reg <= "00" & j_td_r;
+          when IR_ADDR =>
+            shift_reg <= j_addr_r;
+          when IR_POST =>
+            shift_reg <= j_t_post_r;
+          when IR_T_ADDR =>
+            shift_reg <= j_t_addr;
+          when others =>
+            shift_reg <= (others => '0');
+        end case;
       elsif v_sdr = '1' then
-        dr_s(dr_s'left-1 downto 0) <= dr_s(dr_s'left downto 1);
-        dr_s(dr_s'left) <= jtag_tdi;
+        case jtag_ir_in is
+          when IR_STATUS | IR_CMD => -- 8-bit registers
+            shift_reg(6 downto 0) <= shift_reg(7 downto 1);
+            shift_reg(7) <= jtag_tdi;
+          when IR_DATA => -- DATA_WIDTH+1 register
+            shift_reg(DATA_WIDTH-1 downto 0) <= shift_reg(DATA_WIDTH downto 1);
+            shift_reg(DATA_WIDTH) <= jtag_tdi;
+          when IR_T_MASK | IR_T_DATA => -- DATA_WIDTH registers
+            shift_reg(DATA_WIDTH-2 downto 0) <= shift_reg(DATA_WIDTH-1 downto 1);
+            shift_reg(DATA_WIDTH-1) <= jtag_tdi;
+          when IR_ADDR | IR_POST | IR_T_ADDR => -- ADDR_WIDTH registers
+            shift_reg(ADDR_WIDTH-2 downto 0) <= shift_reg(ADDR_WIDTH-1 downto 1);
+            shift_reg(ADDR_WIDTH-1) <= jtag_tdi;
+          when others => null;
+        end case;
       end if;
     end if;
   end process;
 
-  jtag_tdo <= dr_s(0);
+  jtag_tdo <= shift_reg(0);
+
+  -- DPRAM (read port) signals
+  -- TCK clock domain
+  mclk <= jtag_tck;
+  maddr <= j_addr_r;
+  j_data <= mdata;
+
+  -- Clock Domain Crossing for control registers
+  -- (from TCK to system clock)
+  process (clk, reset)
+  begin
+    if reset = '1' then
+      cmd_r0 <= (others => '0');
+      tm_r0 <= (others => '0');
+      td_r0 <= (others => '0');
+      t_post_r0 <= (others => '0');
+      cmd_r0 <= (others => '0');
+      tm_r0 <= (others => '0');
+      td_r0 <= (others => '0');
+      t_post_r0 <= (others => '0');
+    elsif rising_edge(clk) then
+      cmd_r0 <= j_cmd_r;
+      tm_r0 <= j_tm_r;
+      td_r0 <= j_td_r;
+      t_post_r0 <= j_t_post_r;
+      cmd_r1 <= cmd_r0;
+      tm_r1 <= tm_r0;
+      td_r1 <= td_r0;
+      t_post_r1 <= t_post_r0;
+    end if;
+  end process;
+
+  cmd <= cmd_r1;
+  t_mask <= tm_r1;
+  t_data <= td_r1;
+  t_post <= t_post_r1;
+
+  -- clock Domain Crossing for status registers
+  -- (from system clock to TCK)
+  process (jtag_tck, jtag_tlr)
+  begin
+    if jtag_tlr = '1' then
+      status_r0 <= (others => '0');
+      t_addr_r0 <= (others => '0');
+      status_r1 <= (others => '0');
+      t_addr_r1 <= (others => '0');
+    elsif rising_edge(jtag_tck) then
+      status_r0 <= status;
+      t_addr_r0 <= t_addr;
+      status_r1 <= status_r0;
+      t_addr_r1 <= t_addr_r0;
+    end if;
+  end process;
+
+  j_status <= status_r1;
+  j_t_addr <= t_addr_r1;
 
 end architecture rtl;
