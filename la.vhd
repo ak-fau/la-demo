@@ -100,6 +100,7 @@ begin
       trigger => trigger,
       state   => fsm_state,
       done    => done,
+      t_addr  => t_addr,
       dp_wadr => wr_addr,
       dp_we   => wr_en);
 

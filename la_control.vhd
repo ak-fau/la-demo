@@ -14,7 +14,7 @@ entity la_control is
     trigger : in  std_logic;
     state   : out std_logic_vector(3 downto 0);
     done    : out std_logic;
-    t_addr  : out std_logic_vector(L_COUNTER_BITS downto 0);
+    t_addr  : out std_logic_vector(L_COUNTER_BITS-1 downto 0);
     dp_wadr : out std_logic_vector(L_COUNTER_BITS downto 0);
     dp_we   : out std_logic
     );
@@ -172,7 +172,7 @@ begin
     end if;
   end process;
 
-  t_addr <= t_ptr;
+  t_addr <= t_ptr(L_COUNTER_BITS-1 downto 0);
 
   dp_wadr <= d_ptr;
   dp_we   <= dp_write;
