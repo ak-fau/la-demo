@@ -1,0 +1,60 @@
+[*]
+[*] GTKWave Analyzer v3.3.103 (w)1999-2019 BSI
+[*] Wed Jan 29 21:11:27 2020
+[*]
+[dumpfile] "/home/ak/Work/la-demo/la-demo-mx10/sim/data_gen_tb.ghw"
+[dumpfile_mtime] "Wed Jan 29 20:52:35 2020"
+[dumpfile_size] 19575
+[savefile] "/home/ak/Work/la-demo/la-demo-mx10/sim/data_gen_tb.gtkw"
+[timestart] 7088000000
+[size] 2556 958
+[pos] -1 -1
+*-30.072863 260000000 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1 -1
+[treeopen] top.
+[treeopen] top.data_gen_tb.
+[treeopen] top.data_gen_tb.dut.
+[sst_width] 379
+[signals_width] 247
+[sst_expanded] 1
+[sst_vpaned_height] 347
+@28
+top.data_gen_tb.clk
+@420
+top.data_gen_tb.cnt
+@200
+-
+@28
+top.data_gen_tb.reset
+@200
+-
+@28
+top.data_gen_tb.enable
+top.data_gen_tb.mode
+@200
+-
+@20000
+-
+@800023
+[color] 7
+#{top.data_gen_tb.data[7:0]} top.data_gen_tb.data[7] top.data_gen_tb.data[6] top.data_gen_tb.data[5] top.data_gen_tb.data[4] top.data_gen_tb.data[3] top.data_gen_tb.data[2] top.data_gen_tb.data[1] top.data_gen_tb.data[0]
+@29
+[color] 7
+top.data_gen_tb.data[7]
+[color] 7
+top.data_gen_tb.data[6]
+[color] 7
+top.data_gen_tb.data[5]
+[color] 7
+top.data_gen_tb.data[4]
+[color] 7
+top.data_gen_tb.data[3]
+[color] 7
+top.data_gen_tb.data[2]
+[color] 7
+top.data_gen_tb.data[1]
+[color] 7
+top.data_gen_tb.data[0]
+@1001201
+-group_end
+[pattern_trace] 1
+[pattern_trace] 0

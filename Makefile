@@ -24,17 +24,26 @@ OCD_HW_CONFIG := mx10.ocd
 OCD_SVF_CMD = "svf -quiet -progress $<"
 OCD_COMMAND = $(OPENOCD) -f $(OCD_HW_CONFIG) -c $(OCD_SVF_CMD) -c "shutdown"
 
-.PHONY: all clean distclean
+.PHONY: all sim view clean simclean distclean
 
 all: $(OUTPUT_DIR)/$(CONFIG).sof $(OUTPUT_DIR)/$(CONFIG).pof
 
-distclean: clean
+distclean: clean simclean
 	$(RM) -r db incremental_db simulation
 	$(RM) *~ *.bak
 
 clean:
 	$(RM) -r $(OUTPUT_DIR)
 	$(RM) *~ *.rpt *.chg *.htm *.txt *.eqn *.pin *.sof *.pof *.summary
+
+sim:
+	$(MAKE) -C sim
+
+view:
+	$(MAKE) -C sim view
+
+simclean:
+	$(MAKE) -C sim clean
 
 .PHONY: vjtag_test vjtag_server
 
