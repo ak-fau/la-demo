@@ -52,21 +52,19 @@ vjtag_test vjtag_server:
 
 .PHONY: svf pgm cfg
 
-pgm: $(OUTPUT_DIR)/$(CONFIG).pof.svf
+pgm: $(OUTPUT_DIR)/$(CONFIG)_pof.svf
 	$(OCD_COMMAND)
 
-cfg: $(OUTPUT_DIR)/$(CONFIG).sof.svf
+cfg: $(OUTPUT_DIR)/$(CONFIG).svf
 	$(OCD_COMMAND)
 
-svf: $(OUTPUT_DIR)/$(CONFIG).sof.svf $(OUTPUT_DIR)/$(CONFIG).pof.svf
+svf: $(OUTPUT_DIR)/$(CONFIG).svf $(OUTPUT_DIR)/$(CONFIG)_pof.svf
 
-QUARTUS_CPF := $(QUARTUS)_cpf --convert --frequency=5MHz --voltage=2.5V
+%_pof.svf: $(OUTPUT_DIR)/$(CONFIG).asm.rpt
+	@true
 
-%.pof.svf: %.pof $(OUTPUT_DIR)/$(CONFIG).asm.rpt
-	$(QUARTUS_CPF) --operation=pb $< $@
-
-%.sof.svf: %.sof $(OUTPUT_DIR)/$(CONFIG).asm.rpt
-	$(QUARTUS_CPF) --operation=v $< $@
+%.svf: $(OUTPUT_DIR)/$(CONFIG).asm.rpt
+	sed -i -e "35,127d" $@
 
 $(OUTPUT_DIR)/$(CONFIG).sof: asm
 $(OUTPUT_DIR)/$(CONFIG).pof: asm
