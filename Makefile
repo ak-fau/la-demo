@@ -64,7 +64,7 @@ svf: $(OUTPUT_DIR)/$(CONFIG).svf $(OUTPUT_DIR)/$(CONFIG)_pof.svf
 	@true
 
 %.svf: $(OUTPUT_DIR)/$(CONFIG).asm.rpt
-	@true
+	sed -i -e "35,127d" $@
 
 $(OUTPUT_DIR)/$(CONFIG).sof: asm
 $(OUTPUT_DIR)/$(CONFIG).pof: asm
