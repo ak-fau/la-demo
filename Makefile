@@ -19,6 +19,8 @@ RM    := rm -f
 
 QUARTUS := quartus
 
+D := /usr/bin/docker
+
 OPENOCD := openocd
 OCD_HW_CONFIG := mx10.ocd
 OCD_SVF_CMD = "svf -quiet -progress $<"
@@ -49,6 +51,17 @@ simclean:
 
 vjtag_test vjtag_server:
 	-$(OPENOCD) -f $(OCD_HW_CONFIG) -f $@.ocd
+
+.PHONY: docker
+
+docker:
+	D=$(D); \
+	P=$(notdir $(PWD)); \
+	C=$(shell $(D) run --rm -it -e DISPLAY=$DISPLAY -v /tmp/.X11-unix:/tmp/.X11-unix -d quartus); \
+	(cd .. && $${D} cp $${P} $${C}:/home/quartus); \
+	$${D} exec $${C} /bin/bash -l -c "make -C $${P} svf"; \
+	$${D} cp $${C}:/home/quartus/$${P}/output_files ./output_files; \
+	$${D} stop $${C}
 
 .PHONY: svf pgm cfg
 
