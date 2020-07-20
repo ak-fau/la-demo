@@ -54,7 +54,7 @@ vjtag_test vjtag_server:
 
 .PHONY: docker
 
-docker:
+docker: asm.chg fit.chg map.chg
 	D=$(D); \
 	P=$(notdir $(PWD)); \
 	C=$(shell $(D) run --rm -it -e DISPLAY=$${DISPLAY} -v /tmp/.X11-unix:/tmp/.X11-unix -d quartus); \
