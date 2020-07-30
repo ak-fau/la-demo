@@ -64,7 +64,7 @@ svf: $(OUTPUT_DIR)/$(CONFIG).svf $(OUTPUT_DIR)/$(CONFIG)_pof.svf
 	@true
 
 %.svf: $(OUTPUT_DIR)/$(CONFIG).asm.rpt
-	sed -i -e "35,127d" $@
+	sed -i -e "/SIR 10 TDI (2CC)/,/SIR 10 TDI (002)/d" $@
 
 $(OUTPUT_DIR)/$(CONFIG).sof: asm
 $(OUTPUT_DIR)/$(CONFIG).pof: asm
